@@ -26,7 +26,7 @@ gsutil mb -c standard -l europe-west3 gs://cloud-project-bucket-22
 
 To set up a Dataproc cluster with required python dependencies run:
 
-gcloud dataproc clusters create sent-analysis-22 --region=europe-west3 --zone=europe-west3-a --image-version=2.0 --master-machine-type=n1-standard-4  --worker-machine-type=n1-standard-2 --master-boot-disk-size=1000GB --worker-boot-disk-size=500GB --bucket=cloud-project-bucket-3 --optional-components=JUPYTER --enable-component-gateway --metadata “PIP_PACKAGES=google-cloud-bigquery tweepy google-cloud-storage pandas numpy matplotlib seaborn pathlib sklearn wordcloud spark-nlp-display spark-nlp==3.3.1 nltk textblob” --initialization-action-timeout=30m --initialization-actions gs://goog-dataproc-initialization-actions-europe-west3/python/pip-install.sh
+gcloud dataproc clusters create sent-analysis-22 --region=europe-west3 --zone=europe-west3-a --image-version=2.0 --master-machine-type=n1-standard-4  --worker-machine-type=n1-standard-2 --master-boot-disk-size=1000GB --worker-boot-disk-size=500GB --bucket=cloud-project-bucket-22 --optional-components=JUPYTER --enable-component-gateway --metadata “PIP_PACKAGES=google-cloud-bigquery tweepy google-cloud-storage pandas numpy matplotlib seaborn pathlib sklearn wordcloud spark-nlp-display spark-nlp==3.3.1 nltk textblob” --initialization-action-timeout=30m --initialization-actions gs://goog-dataproc-initialization-actions-europe-west3/python/pip-install.sh
 
 Next, download and run the Python file in this repo "download_and_upload.py" either directly or through the use of the following command in the Google CLI:
 
