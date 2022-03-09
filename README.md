@@ -26,13 +26,13 @@ Next, download and run the Python file in this repo "download_and_upload.py" eit
 PYTHON download_and_upload.py
 This .py script downloads, unzip's and renames the Sentiment140 dataset which will be used to create our model. Note: I also have included code that would send it directly to the Google Cloud but I haven't gotten around to completing the code
 
-gsutil cp C:\Users\catha\Downloads\sentiment140\Sentiment_Analysis_Dataset.csv gs://cloud-project-bucket-4
+gsutil cp C:\Users\catha\Downloads\sentiment140\Sentiment_Analysis_Dataset.csv gs://cloud-project-bucket-22
 
 Next upload the Sentiment140 file to Google Cloud with the following command(substituting the actual location of the file for OBJECT_LOCATION):
-gsutil cp OBJECT_LOCATION gs://cloud-project-bucket-4
+gsutil cp OBJECT_LOCATION gs://cloud-project-bucket-22
 
 To check the file uploaded, run:
-gsutil ls -r gs://cloud-project-bucket-3**
+gsutil ls -r gs://cloud-project-bucket-22**
 
 To get the link to the JupyterLab notebook for this cluster, run:
 gcloud beta dataproc clusters describe sent-analysis-22 --region=europe-west3
