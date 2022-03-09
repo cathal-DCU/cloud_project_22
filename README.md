@@ -1,6 +1,6 @@
 # cloud_project_22
 
-Note: All these command line individual requests are a bit untidy and I will put into an executable Python script if I have time to figure it out
+Note: All these command line individual requests are a bit untidy and I will put into an executable Python script if I have time to figure it out(I have started the envir_prep.sh bash script)
 
 To start with you will need to download the Google Command Line interface from https://cloud.google.com/sdk/docs/install
 
