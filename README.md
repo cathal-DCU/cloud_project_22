@@ -38,3 +38,5 @@ To get the link to the JupyterLab notebook for this cluster, run:
 gcloud beta dataproc clusters describe sent-analysis-22 --region=europe-west3
 Then put that link into your browser
 
+*If you need to delete the cluster, run the following:
+gcloud beta dataproc clusters delete sent-analysis-22 --region=europe-west3
