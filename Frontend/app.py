@@ -16,6 +16,7 @@ import requests
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import random
 
 
 satellite = Orbital('TERRA')
@@ -42,7 +43,7 @@ app.layout = html.Div(
         #dcc.Graph(id='live-update-map'),
         dcc.Interval(
             id='interval-component',
-            interval=5*1000, # in milliseconds
+            interval=1*1000, # in milliseconds
             n_intervals=0
         )
     ]
@@ -59,13 +60,13 @@ app.layout = html.Div(
     ],
     [
         Input("submit-val", "n_clicks"),
-        #Input('interval-component', 'n_intervals')
+        Input('interval-component', 'n_intervals')
     ]
     ,
     State('input-on-submit', 'value')
 )
-#def submit_topic(n_clicks, n_intervals, topic):
-def submit_topic(n_clicks, topic):
+def submit_topic(n_clicks, n_intervals, topic):
+#def submit_topic(n_clicks, topic):
     print(n_clicks)
     print(topic)
 
@@ -76,7 +77,7 @@ def submit_topic(n_clicks, topic):
     # Get data frame for topic from cloud - this is a sample dataset
     df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/2014_world_gdp_with_codes.csv")
     df_max_scaled = df.copy()
-    df_max_scaled["GDP (BILLIONS)"] = df_max_scaled["GDP (BILLIONS)"] /df_max_scaled["GDP (BILLIONS)"].abs().max()
+    df_max_scaled["GDP (BILLIONS)"] = df_max_scaled["GDP (BILLIONS)"] * random.uniform(0, 1) /df_max_scaled["GDP (BILLIONS)"].abs().max()
 
     # Sample map
     fig = px.choropleth(
