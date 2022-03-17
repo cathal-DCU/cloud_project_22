@@ -1,5 +1,4 @@
 # pip install dash
-# pip install pyorbital
 # pip install fsspec
 # pip install gcsfs 
 # pip install pycountry_convert
@@ -8,7 +7,7 @@ import datetime
 from logging import exception
 from msilib.schema import Error
 import traceback
-from turtle import color
+from turtle import color, width
 
 import dash
 from dash import dcc, html
@@ -26,8 +25,6 @@ from pycountry_convert import country_alpha2_to_country_name, country_name_to_co
 
 project_bucket_name = "cloud-project-bucket-ns-22"
 
-#from pyorbital.orbital import Orbital
-#satellite = Orbital('TERRA')
 #external_stylesheets = []
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app = dash.Dash(__name__)
@@ -45,13 +42,11 @@ app.layout = html.Div(
             html.Button('Submit', id='submit-val', n_clicks=0, style={'display': 'inline-block'}),
         ]),
         
-        
         html.Div(id="topic_container"),
         html.Br(),
 
         # Sample live maps
         html.H4('Live Tweet Sentiment Map'),
-        #dcc.Graph(id="sentiment_map", figure={}),
         html.Div(children=[
             dcc.Graph(id="live-update-sentiment-map"),
         ], style={"border":"2px black solid"}),
@@ -60,30 +55,101 @@ app.layout = html.Div(
         # Tweet breakdown graphs
         html.H4('Tweet Breakdown'),
         html.Div(id='live-update-text'),
-        #dcc.Graph(id='live-update-sentiment-category-graph'),
         html.Div(children=[
             dcc.Graph(id="live-update-sentiment-category-graph", style={'display': 'inline-block'}),
             dcc.Graph(id="live-update-sentiment-category-graph2", style={'display': 'inline-block'}),
+            #dcc.Graph(id="live-update-sentiment-category-graph3", style={'display': 'inline-block'}),
         ], style={"border":"2px black solid"}),
         
-        # # Sample live graphs
-        # html.H4('TERRA Satellite Live Feed'),
-        
-        # dcc.Graph(id='live-update-graph'),
-        #dcc.Graph(id='live-update-map'),
+
+        # Update interval for live graphs
         dcc.Interval(
             id='interval-component',
             interval=5*1000, # in milliseconds
             n_intervals=0
-        )
+        ),
+
+        # Stores for data sets
+        dcc.Store(id='topic'),
+        dcc.Store(id='df-sentiment-by-country'),
+        dcc.Store(id='df-sentiment-by-category'),
     ]
 )
 
+@app.callback(
+    [
+        Output('df-sentiment-by-country', 'data'),
+        Output('df-sentiment-by-category', 'data'),
+    ],
+    [
+        Input('interval-component', 'n_intervals'),
+        Input('df-sentiment-by-country', 'data'),
+        Input('topic', 'data'),
+    ]
+)
+def update_data(n_intervals, df_sentiment_by_country_json, topic):
+
+    if df_sentiment_by_country_json is not None:
+
+        df_sentiment_by_country_old = pd.read_json(df_sentiment_by_country_json[0], orient='split')
+        print("Saved data...")
+        print(df_sentiment_by_country_old.head())
+
+    df = get_df_sentiment_by_country_streaming(topic)
+    df_country_json = df.to_json(date_format='iso', orient='split')
+
+    df = get_df_sentiment_by_category_streaming(topic)
+    df_category_json = df.to_json(date_format='iso', orient='split')
+
+    return [df_country_json], [df_category_json]
+
+def get_df_sentiment_by_country_streaming(topic):
+    if topic is None:
+        # Setup blank data frame
+        df = pd.DataFrame({
+            "Country": pd.Series(dtype='str')
+            , "CountryCode": pd.Series(dtype='str')
+            , "Sentiment" : pd.Series(dtype='float')
+            , "TweetCount" : pd.Series(dtype='int')
+        })
+        return df
+    else:
+        df_url = "gs://{}/Output/{}/df_sentiment_by_country_streaming.csv".format(project_bucket_name, topic)
+        print(df_url)
+        df = pd.read_csv(df_url)
+        
+        # Set no location on map to antartica and convert country codes to 3 letter versions
+        df["Country"].fillna('No Location', inplace=True)
+        df["CountryCode"].fillna('AQ', inplace=True)
+        df['CountryCode'] = df.CountryCode.apply(lambda x: country_name_to_country_alpha3(country_alpha2_to_country_name(x)))
+        print(df.head(10))
+        return df
+    
+def get_df_sentiment_by_category_streaming(topic):
+    if topic is None:
+        # Setup blank data frame
+        df = pd.DataFrame({
+            "Sentiment" : pd.Series(dtype='str')
+            , "TweetCount" : pd.Series(dtype='int')
+        })
+        return df
+    else:
+        # Get data frame for topic from cloud
+        df_url = "gs://{}/Output/{}/df_sentiment_by_category_streaming.csv".format(project_bucket_name, topic)
+        print(df_url)
+        df = pd.read_csv(df_url)
+        print(df.head(10))
+        return df
+    
+
 
 # ------------------------------------------------------------------------------
-# Connect the Plotly graphs with Dash Components
+# Submit topic
 @app.callback(
-    Output(component_id="topic_container", component_property="children"),
+    [
+        Output("topic", "data"),
+        Output(component_id="topic_container", component_property="children"),
+    ],
     Input("submit-val", "n_clicks"),
     State('input-on-submit', 'value'),
 )
@@ -91,48 +157,25 @@ def submit_topic(n_clicks, topic):
     print(topic)
 
     # Kick off topic in cloud - TODO
-    # if n_clicks == 1:
-    container = ["The topic chosen by user was: '{}'".format(topic)]
-    return container
-
-
-# Multiple components can update everytime interval gets fired.
-@app.callback(Output('live-update-sentiment-map', 'figure'),
-              Input('interval-component', 'n_intervals'),
-              State('input-on-submit', 'value'))
-def live_update_sentiment_map(n, topic):
-
-    # Setup blank data frame
-    df = pd.DataFrame({
-        "Country": pd.Series(dtype='str')
-        , "CountryCode": pd.Series(dtype='str')
-        , "Sentiment" : pd.Series(dtype='float')
-        , "TweetCount" : pd.Series(dtype='int')
-    })
-
-    #if topic is not None and n == 1:
+    clean_topic = topic
     if topic is not None:
-        try:
-            # Get data frame for topic from cloud - this is a sample dataset
-            #df = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/2014_world_gdp_with_codes.csv")
-            #df = pd.read_csv("gs://{}/Output/{}/2014_world_gdp_with_codes.csv".format(project_bucket_name, topic))
-            #df.rename(columns={"GDP (BILLIONS)" : "Sentiment", "CODE" : "CountryCode", "COUNTRY" : "Country"}, inplace=True)
-            df_url = "gs://{}/Output/{}/df_sentiment_by_country_streaming.csv".format(project_bucket_name, topic)
-            print(df_url)
-            df = pd.read_csv(df_url)
-            
-            # Set no location on map and convert country codes to 3 letter versions
-            #df = df.copy()
-            df["Country"].fillna('No Location', inplace=True)
-            df["CountryCode"].fillna('AQ', inplace=True)
-            df['CountryCode'] = df.CountryCode.apply(lambda x: country_name_to_country_alpha3(country_alpha2_to_country_name(x)))
-            print(df.head(10))
-            
-            # To Show updates for testing
-            #df_sentiment_map["Sentiment"] = df_sentiment_map["Sentiment"] * random.uniform(-1, 1) / df_sentiment_map["Sentiment"].abs().max()
+        clean_topic = topic.strip()
+        if len(clean_topic) == 0:
+            clean_topic = None
+    
+    container = ["The topic chosen by user was: '{}'".format(topic)]
+    return clean_topic, container
 
-        except Exception as e:
-            print("Error accessing data..." + traceback.format_exc())
+
+# Live update Sentiment map
+@app.callback(Output('live-update-sentiment-map', 'figure'),
+               [
+                   Input('interval-component', 'n_intervals'),
+                   Input('df-sentiment-by-country', 'data'),
+               ])
+def live_update_sentiment_map(n, df_json):
+    # Parse df
+    df = pd.read_json(df_json[0], orient='split')
 
     # Sentiment map
     fig = px.choropleth(
@@ -145,31 +188,38 @@ def live_update_sentiment_map(n, topic):
         color_continuous_scale=px.colors.diverging.RdBu,
         color_continuous_midpoint=0,
     )
-    #fig.update_geos(fitbounds="locations")
-
+    # fig.update_layout(
+    #     autosize=False,
+    #     margin=dict(l=60, r=60, t=50, b=50, autoexpand=True),
+    #     # margin = dict(
+    #     #         l=0,
+    #     #         r=0,
+    #     #         b=0,
+    #     #         t=0,
+    #     #         pad=4,
+    #     #         autoexpand=True
+    #     #     ),
+    #         width=800,
+    #     #     height=400,
+    # )
     return fig
 
 
-
+# Sample metrics with number of tweets and current date from last update
 @app.callback(Output('live-update-text', 'children'),
-              Input('interval-component', 'n_intervals'),
-              State('input-on-submit', 'value'))
-def update_metrics(n, topic):
+              [
+                  Input('interval-component', 'n_intervals'),
+                  Input('df-sentiment-by-category', 'data'),
+              ])
+def update_metrics(n, df_json):
     
     tweet_count = 0
+    if df_json is not None:
+        # Parse df
+        df = pd.read_json(df_json[0], orient='split')
+        # Update tweet count
+        tweet_count = df['TweetCount'].sum()
     date = datetime.datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
-    if topic is not None:
-        try:
-             # Get data frame for topic from cloud
-            df_url = "gs://{}/Output/{}/df_sentiment_by_category_streaming.csv".format(project_bucket_name, topic)
-            print(df_url)
-            df = pd.read_csv(df_url)
-
-            # Update tweet count
-            tweet_count = df['TweetCount'].sum()
-        except Exception as e:
-            print("Error getting data..." + traceback.format_exc())
-
     style = {'padding': '5px', 'fontSize': '16px'}
     return [
         html.Span('Last Update: {}'.format(date), style=style),
@@ -177,136 +227,60 @@ def update_metrics(n, topic):
     ]
 
 
-# Multiple components can update everytime interval gets fired.
+# Live update sentiment category pie chart
 @app.callback(Output('live-update-sentiment-category-graph', 'figure'),
-              Input('interval-component', 'n_intervals'),
-              State('input-on-submit', 'value'))
-def live_update_sentiment_category_graph(n, topic):
+              [
+                  Input('interval-component', 'n_intervals'),
+                  Input('df-sentiment-by-category', 'data'),
+              ])
+def live_update_sentiment_category_graph(n, df_json):
 
-    # Setup blank data frame
-    df = pd.DataFrame({
-        "Sentiment" : pd.Series(dtype='str')
-        , "TweetCount" : pd.Series(dtype='int')
-    })
-
-    if topic is not None:
-        try:
-            # Get data frame for topic from cloud
-            df_url = "gs://{}/Output/{}/df_sentiment_by_category_streaming.csv".format(project_bucket_name, topic)
-            print(df_url)
-            df = pd.read_csv(df_url)
-
-        except Exception as e:
-            print("Error accessing data..." + traceback.format_exc())
-
-    #fig = px.pie(df, x="Sentiment", y="TweetCount", color="Sentiment", title="Sentiment Category Count")
-    fig = px.pie(
-        df, 
-        title="Sentiment By Category", 
-        values="TweetCount", 
-        names="Sentiment", 
-        color="Sentiment", 
-        color_discrete_map={'Neutral':'orange',
-                                 'Positive':'green',
-                                 'Negative':'red'}
-    )
+    if df_json is not None:
+        # Parse df
+        df = pd.read_json(df_json[0], orient='split')
+        fig = px.pie(
+            df, 
+            title="Sentiment By Category", 
+            values="TweetCount", 
+            names="Sentiment", 
+            color="Sentiment", 
+            color_discrete_map={'Neutral':'orange',
+                                    'Positive':'green',
+                                    'Negative':'red'}
+        )
+    else:
+        return [""]
+    
     return fig
 
 
-
-# Multiple components can update everytime interval gets fired.
+# Live update country tweet count bar chart
 @app.callback(Output('live-update-sentiment-category-graph2', 'figure'),
-              Input('interval-component', 'n_intervals'),
-              State('input-on-submit', 'value'))
-def live_update_sentiment_category_graph2(n, topic):
+              [
+                  Input('interval-component', 'n_intervals'),
+                  Input('df-sentiment-by-country', 'data'),
+              ])
+def live_update_sentiment_category_graph2(n, df_json):
 
-    # Setup blank data frame
-    df = pd.DataFrame({
-        "Country": pd.Series(dtype='str')
-        , "CountryCode": pd.Series(dtype='str')
-        , "Sentiment" : pd.Series(dtype='float')
-        , "TweetCount" : pd.Series(dtype='int')
-    })
+    if df_json is not None:
+        # Parse df
+        df = pd.read_json(df_json[0], orient='split')
+        fig = px.bar(
+            df, 
+            title="Tweets By Country", 
+            y="TweetCount", 
+            x="Country",
+            text_auto='.2s',
+            log_y=True
+        )
+        fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
+    else:
+        return [""]
 
-    if topic is not None:
-        try:
-            # Get data frame for topic from cloud
-            df_url = "gs://{}/Output/{}/df_sentiment_by_country_streaming.csv".format(project_bucket_name, topic)
-            print(df_url)
-            df = pd.read_csv(df_url)
-            #print(df.head())
-            df["Country"].fillna('No Location', inplace=True)
-            df["CountryCode"].fillna('AQ', inplace=True)
-            df['CountryCode'] = df.CountryCode.apply(lambda x: country_name_to_country_alpha3(country_alpha2_to_country_name(x)))
-
-        except Exception as e:
-            print("Error accessing data..." + traceback.format_exc())
-
-    #fig = px.pie(df, x="Sentiment", y="TweetCount", color="Sentiment", title="Sentiment Category Count")
-    fig = px.bar(
-        df, 
-        title="Tweets By Country", 
-        y="TweetCount", 
-        x="Country",
-        text_auto='.2s',
-    )
-    fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
     return fig
-
-
-
-
-
-# # Multiple components can update everytime interval gets fired.
-# @app.callback(Output('live-update-graph', 'figure'),
-#               Input('interval-component', 'n_intervals'))
-# def update_graph_live(n):
-#     satellite = Orbital('TERRA')
-#     data = {
-#         'time': [],
-#         'Latitude': [],
-#         'Longitude': [],
-#         'Altitude': []
-#     }
-
-#     # Collect some data
-#     for i in range(180):
-#         time = datetime.datetime.now() - datetime.timedelta(seconds=i*20)
-#         lon, lat, alt = satellite.get_lonlatalt(
-#             time
-#         )
-#         data['Longitude'].append(lon)
-#         data['Latitude'].append(lat)
-#         data['Altitude'].append(alt)
-#         data['time'].append(time)
-
-#     # Create the graph with subplots
-#     fig = plotly.tools.make_subplots(rows=2, cols=1, vertical_spacing=0.2)
-#     fig['layout']['margin'] = {
-#         'l': 30, 'r': 10, 'b': 30, 't': 10
-#     }
-#     fig['layout']['legend'] = {'x': 0, 'y': 1, 'xanchor': 'left'}
-
-#     fig.append_trace({
-#         'x': data['time'],
-#         'y': data['Altitude'],
-#         'name': 'Altitude',
-#         'mode': 'lines+markers',
-#         'type': 'scatter'
-#     }, 1, 1)
-#     fig.append_trace({
-#         'x': data['Longitude'],
-#         'y': data['Latitude'],
-#         'text': data['time'],
-#         'name': 'Longitude vs Latitude',
-#         'mode': 'lines+markers',
-#         'type': 'scatter'
-#     }, 2, 1)
-
-#     return fig
 
     
-# --------------------------------
+# Main
 if __name__ == "__main__":
     app.run_server(debug=True)
     #app.run_server(mode="inline")
