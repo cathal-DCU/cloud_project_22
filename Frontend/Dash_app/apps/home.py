@@ -8,7 +8,7 @@ first_card = dbc.Card(
         [
             html.H5("Enter your topic of interest", className="card-title"),
             html.P("Then click 'Submit' and start exploring"),
-            dcc.Input(id='input-on-submit', type='text', value="eg Batman", style={'display': 'inline-block'}),
+            dcc.Input(id='input-on-submit', type='text', size="55", value="eg Batman", style={'display': 'inline-block'}),
             html.Button('Submit', id='submit-val', n_clicks=0, style={'display': 'inline-block'}),
         ]
     )

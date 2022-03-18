@@ -32,13 +32,14 @@ navbar = dbc.Navbar(
                 # Use row and col to control vertical alignment of logo / brand
                 dbc.Row(
                     [
-                        dbc.Col(html.Img(src="/assets/twitter_logo.jpg", height="75px")),
-                        dbc.Col(dbc.NavbarBrand("Sentiment Explorer", className="ml-2")),
+                        dbc.Col(html.Img(src="/assets/twitter_logo.jpg", height="75px"), style={"margin-right": "22rem"}),
+                        dbc.Col(dbc.NavbarBrand("Sentiment Explorer", className="ml-5",style ={'width':'26vH','height':'80px'})),
                     ],
                     align="center",
                 ),
                 href="/home",
             ),
+
             dbc.NavbarToggler(id="navbar-toggler2"),
             dbc.Collapse(
                 dbc.Nav(
@@ -46,7 +47,7 @@ navbar = dbc.Navbar(
                     [dropdown], className="ml-auto", navbar=True
                 ),
                 id="navbar-collapse2",
-                navbar=True,
+                navbar=True,style={"margin-left": "22rem"}
             ),
         ]
     ),
@@ -90,4 +91,4 @@ def display_page(pathname):
         return home.layout
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True) # port=5500
