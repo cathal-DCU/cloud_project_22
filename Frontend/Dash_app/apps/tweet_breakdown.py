@@ -76,36 +76,7 @@ second_card = dbc.Card(
         ]
     )
 )
-"""
-third_card = dbc.Card(
-    dbc.CardBody(
-        [
-            html.H5("Proportion of Tweets by country", className="card-title"),
-            dbc.Row([
-                dbc.Col(html.Img(src="/assets/image_one.png")),
-                # dbc.Col(dbc.NavbarBrand("Sentiment Explorer", className="ml-2")),
-            ],
-                align="center",
-            ),
-        ]
-    )
-)
 
-
-fourth_card = dbc.Card(
-    dbc.CardBody(
-        [
-            html.H5("Analysis of sentiment per category", className="card-title"),
-            dbc.Row([
-                dbc.Col(html.Img(src="/assets/image_two.png")),
-                # dbc.Col(dbc.NavbarBrand("Sentiment Explorer", className="ml-2")),
-            ],
-                align="center",
-            ),
-        ]
-    )
-)
-"""
 
 layout = html.Div([
     dbc.Container([
