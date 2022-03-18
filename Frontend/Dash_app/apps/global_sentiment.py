@@ -136,24 +136,7 @@ layout = html.Div([
         ],
             align="center",
         ),
-        dbc.Row([
-            dbc.Col(dbc.Card(html.H3(children='Cumulative sentiment by continent',
-                                     className="text-center text-light bg-dark"), body=True, color="dark")
-                    , className="mb-4")
-        ]),
 
-        dbc.Row([
-            dbc.Col(html.H5(children='Latest update: ' + dt_string, className="text-center"),
-                    width=4, className="mt-4"),
-            dbc.Col(html.H5(children='Cumulative figures: ' + dt_string, className="text-center"), width=8,
-                    className="mt-4"),
-        ]),
-
-        dbc.Row([
-
-            dbc.Col(dcc.Graph(id='live-update-sentiment-map3'), width=4),
-            dbc.Col(dcc.Graph(id='live-update-sentiment-map4'), width=8)
-        ]),
         # Update interval for live graphs
         dcc.Interval(
             id='interval-component',
