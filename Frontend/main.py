@@ -38,7 +38,7 @@ app.layout = html.Div(
         
         html.H2('Enter a topic...'),
         html.Div(children=[
-            dcc.Input(id='input-on-submit', type='text', style={'display': 'inline-block'}),
+            dcc.Input(id='input-on-submit', type='text', value="Batman", style={'display': 'inline-block'}),
             html.Button('Submit', id='submit-val', n_clicks=0, style={'display': 'inline-block'}),
         ]),
         
@@ -70,7 +70,7 @@ app.layout = html.Div(
         ),
 
         # Stores for data sets
-        dcc.Store(id='topic'),
+        dcc.Store(id='topic', data='Batman'),
         dcc.Store(id='df-sentiment-by-country'),
         dcc.Store(id='df-sentiment-by-category'),
     ]
@@ -223,7 +223,7 @@ def update_metrics(n, df_json):
     style = {'padding': '5px', 'fontSize': '16px'}
     return [
         html.Span('Last Update: {}'.format(date), style=style),
-        html.Span('Tweet Count: {}'.format(tweet_count), style=style),
+        html.Span('Tweet Count: {:,}'.format(tweet_count), style=style),
     ]
 
 
