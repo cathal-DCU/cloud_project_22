@@ -1,28 +1,18 @@
-from dash import html, dcc, dash_table
 from app import app, server
 from dash import html, dcc, dash_table
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
-#import dash_html_components as html
-import dash_bootstrap_components as dbc
 
-# needed only if running this as a single page app
-#external_stylesheets = [dbc.themes.LUX]
-
-#app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
-# change to app.layout if running as single page app instead
 first_card = dbc.Card(
     dbc.CardBody(
         [
             html.H5("Enter your topic of interest", className="card-title"),
             html.P("Then click 'Submit' and start exploring"),
-            dcc.Input(id='input-on-submit', type='text', value="Batman", style={'display': 'inline-block'}),
+            dcc.Input(id='input-on-submit', type='text', value="eg Batman", style={'display': 'inline-block'}),
             html.Button('Submit', id='submit-val', n_clicks=0, style={'display': 'inline-block'}),
         ]
     )
 )
-
 
 second_card = dbc.Card(
     dbc.CardBody(
