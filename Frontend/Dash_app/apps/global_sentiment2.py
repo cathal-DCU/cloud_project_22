@@ -109,7 +109,7 @@ layout = html.Div([
 
         html.Br(),
         dbc.Row([
-            dbc.Col(html.H6(id='live-update-text'), className="mb-4")
+            dbc.Col(html.H6(id='live-update-text2'), className="mb-4")
         ]),
 
 
@@ -244,7 +244,7 @@ def get_df_sentiment_by_category_streaming(topic):
 
 
 # Sample metrics with number of tweets and current date from last update
-@app.callback(Output('live-update-text', 'children'),
+@app.callback(Output('live-update-text2', 'children'),
               [
                   Input('interval-component', 'n_intervals'),
                   Input('df-sentiment-by-category', 'data'),
