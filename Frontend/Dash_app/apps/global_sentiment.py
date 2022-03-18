@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 from urllib.request import urlopen
 import json
-import requests
+#import requests
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -33,33 +33,36 @@ import codecs
 import dash_dangerously_set_inner_html
 
 
-
-get_df_sentiment_by_country_streaming = pd.read_csv(
-    "C:/Users/catha/PycharmProjects/finalproject/Frontend/Dash_app/apps/Output_Batman_df_sentiment_by_country_streaming.csv")
-get_df_sentiment_by_category_streaming = pd.read_csv(
-    "C:/Users/catha/PycharmProjects/finalproject/Frontend/Dash_app/apps/Output_Batman_df_sentiment_by_category_streaming.csv")
-
-total_sentiment = get_df_sentiment_by_country_streaming
+project_bucket_name = "cloud-project-bucket-ns-22"
 
 
-negative_sentiment = get_df_sentiment_by_country_streaming[(get_df_sentiment_by_country_streaming["Sentiment"] < 0)]
-positive_sentiment = get_df_sentiment_by_country_streaming[(get_df_sentiment_by_country_streaming["Sentiment"] > 0)]
-neutral_sentiment = get_df_sentiment_by_country_streaming[(get_df_sentiment_by_country_streaming["Sentiment"] == 0)]
+
+# get_df_sentiment_by_country_streaming = pd.read_csv(
+#     "C:/Users/catha/PycharmProjects/finalproject/Frontend/Dash_app/apps/Output_Batman_df_sentiment_by_country_streaming.csv")
+# get_df_sentiment_by_category_streaming = pd.read_csv(
+#     "C:/Users/catha/PycharmProjects/finalproject/Frontend/Dash_app/apps/Output_Batman_df_sentiment_by_category_streaming.csv")
+
+# total_sentiment = get_df_sentiment_by_country_streaming
+
+
+# negative_sentiment = get_df_sentiment_by_country_streaming[(get_df_sentiment_by_country_streaming["Sentiment"] < 0)]
+# positive_sentiment = get_df_sentiment_by_country_streaming[(get_df_sentiment_by_country_streaming["Sentiment"] > 0)]
+# neutral_sentiment = get_df_sentiment_by_country_streaming[(get_df_sentiment_by_country_streaming["Sentiment"] == 0)]
 # print(neutral_sentiment.head(5))
 
-country_json = get_df_sentiment_by_country_streaming.to_json()
-category_json = get_df_sentiment_by_category_streaming.to_json()
+# country_json = get_df_sentiment_by_country_streaming.to_json()
+# category_json = get_df_sentiment_by_category_streaming.to_json()
 
 
-def dataframe_chooser(value):
-    if value == 'total_sentiment':
-        return total_sentiment
-    elif value == 'positive_sentiment':
-        return positive_sentiment
-    elif value == 'negative_sentiment':
-        return negative_sentiment
-    else:
-        return neutral_sentiment
+# def dataframe_chooser(value):
+#     if value == 'total_sentiment':
+#         return total_sentiment
+#     elif value == 'positive_sentiment':
+#         return positive_sentiment
+#     elif value == 'negative_sentiment':
+#         return negative_sentiment
+#     else:
+#         return neutral_sentiment
 
 
 {'label': 'Total Sentiment', 'value': 'total_sentiment'},
@@ -152,24 +155,104 @@ layout = html.Div([
             dbc.Col(dcc.Graph(id='total_pie_cases_or_deaths'), width=4),
             dbc.Col(dcc.Graph(id='total_line_cases_or_deaths'), width=8)
         ]),
+
+        # Update interval for live graphs
+        dcc.Interval(
+            id='interval-component',
+            interval=10*1000, # in milliseconds
+            n_intervals=0
+        ),
+
         # Stores for data sets
-        dcc.Store(id='df-sentiment-by-country', data=country_json),
-        dcc.Store(id='df-sentiment-by-category', data=category_json),
+        dcc.Store(id='topic', data="Batman"),
+        dcc.Store(id='df-sentiment-by-country'),
+        dcc.Store(id='df-sentiment-by-category'),
     ])
 ])
 
 
 
-# Live update Sentiment map
-@app.callback(Output('live-update-sentiment-map', 'figure'),
-              [
-                  Input('sentiment_of_interest', 'value'),
-              ])
-def live_update_sentiment_map(choice):
-    # Parse df
-    # df = pd.read_json(df_json[0], orient='split')
+@app.callback(
+    [
+        Output('df-sentiment-by-country', 'data'),
+        Output('df-sentiment-by-category', 'data'),
+    ],
+    [
+        Input('interval-component', 'n_intervals'),
+        Input('df-sentiment-by-country', 'data'),
+        Input('topic', 'data'),
+    ]
+)
+def update_data(n_intervals, df_sentiment_by_country_json, topic):
 
-    df = dataframe_chooser("total_sentiment")
+    if df_sentiment_by_country_json is not None:
+
+        df_sentiment_by_country_old = pd.read_json(df_sentiment_by_country_json[0], orient='split')
+        print("Saved data...")
+        print(df_sentiment_by_country_old.head())
+
+    df = get_df_sentiment_by_country_streaming(topic)
+    df_country_json = df.to_json(date_format='iso', orient='split')
+
+    df = get_df_sentiment_by_category_streaming(topic)
+    df_category_json = df.to_json(date_format='iso', orient='split')
+
+    return [df_country_json], [df_category_json]
+
+def get_df_sentiment_by_country_streaming(topic):
+    if topic is None:
+        # Setup blank data frame
+        df = pd.DataFrame({
+            "Country": pd.Series(dtype='str')
+            , "CountryCode": pd.Series(dtype='str')
+            , "Sentiment" : pd.Series(dtype='float')
+            , "TweetCount" : pd.Series(dtype='int')
+        })
+        return df
+    else:
+        df_url = "gs://{}/Output/{}/df_sentiment_by_country_streaming.csv".format(project_bucket_name, topic)
+        print(df_url)
+        df = pd.read_csv(df_url)
+        
+        # Set no location on map to antartica and convert country codes to 3 letter versions
+        df["Country"].fillna('No Location', inplace=True)
+        df["CountryCode"].fillna('AQ', inplace=True)
+        df['CountryCode'] = df.CountryCode.apply(lambda x: country_name_to_country_alpha3(country_alpha2_to_country_name(x)))
+        print(df.head(10))
+        return df
+    
+def get_df_sentiment_by_category_streaming(topic):
+    if topic is None:
+        # Setup blank data frame
+        df = pd.DataFrame({
+            "Sentiment" : pd.Series(dtype='str')
+            , "TweetCount" : pd.Series(dtype='int')
+        })
+        return df
+    else:
+        # Get data frame for topic from cloud
+        df_url = "gs://{}/Output/{}/df_sentiment_by_category_streaming.csv".format(project_bucket_name, topic)
+        print(df_url)
+        df = pd.read_csv(df_url)
+        print(df.head(10))
+        return df
+
+
+# Live update Sentiment map
+# @app.callback(Output('live-update-sentiment-map', 'figure'),
+#               [
+#                   Input('sentiment_of_interest', 'value'),
+#               ])
+@app.callback(Output('live-update-sentiment-map', 'figure'),
+               [
+                   Input('interval-component', 'n_intervals'),
+                   Input('df-sentiment-by-country', 'data'),
+               ])
+def live_update_sentiment_map(n, df_json):
+    # Parse df
+    df = pd.read_json(df_json[0], orient='split')
+
+    #df = dataframe_chooser("total_sentiment")
     # Sentiment map
     colorscale = [
         [0, 'rgb(31,120,180)'],
