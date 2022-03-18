@@ -22,7 +22,6 @@ layout = html.Div([
         dbc.Row([
             dbc.Col(html.H6(children='Visualising trends across the world'), className="mb-4")
         ]),
-        # choose between cases or deaths
         dcc.Dropdown(
             id='sentiment_of_interest',
             options=[
