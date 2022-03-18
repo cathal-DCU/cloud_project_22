@@ -45,9 +45,12 @@ dt_string = now.strftime("%d/%m/%Y %H:%M")
 first_card = dbc.Card(
     dbc.CardBody(
         [
-            html.H5("Sentiment Breakdown", className="card-title"),
             dbc.Row([
-                dbc.Col(html.Img(src="/assets/image_three.png")),
+                html.H4('Live Tweet Sentiment Breakdown'),
+                html.Div(children=[
+                    dcc.Graph(id="live-update-sentiment-category-graph3"),  # fig_test
+                ], style={"border": "2px black solid"}),
+                html.Br(),
                 # dbc.Col(dbc.NavbarBrand("Sentiment Explorer", className="ml-2")),
             ],
                 align="center",
@@ -60,9 +63,12 @@ first_card = dbc.Card(
 second_card = dbc.Card(
     dbc.CardBody(
         [
-            html.H5("Wordcloud of most common words", className="card-title"),
             dbc.Row([
-                dbc.Col(html.Img(src="/assets/image_four.png")),
+                html.H4('Current Volume of Tweets'),
+                html.Div(children=[
+                    dcc.Graph(id="live-update-text"),  # fig_test
+                ], style={"border": "2px black solid"}),
+                html.Br(),
                 # dbc.Col(dbc.NavbarBrand("Sentiment Explorer", className="ml-2")),
             ],
                 align="center",
@@ -70,7 +76,7 @@ second_card = dbc.Card(
         ]
     )
 )
-
+"""
 third_card = dbc.Card(
     dbc.CardBody(
         [
@@ -99,7 +105,7 @@ fourth_card = dbc.Card(
         ]
     )
 )
-
+"""
 
 layout = html.Div([
     dbc.Container([
@@ -112,41 +118,22 @@ layout = html.Div([
 
 # for some reason, font colour remains black if using the color option
     dbc.Row([
-            dbc.Col(dbc.Card(html.H3(children='Most commonly tweeted words',
+            dbc.Col(dbc.Card(html.H3(children='Overall Tweet Sentiment',
                                      className="text-center text-light bg-dark"), body=True, color="dark")
                     , className="mt-4 mb-4")
         ]),
-        dbc.Row([
-            dbc.Col(html.H5(children='* after removal of stopwords and non-standard characters')
-                    , className="mb-5")
-        ]),
+
     dbc.Row([
         dbc.Col(first_card, width=8),
         dbc.Col(second_card, width=4),
             ]
         ),
-
-    dbc.Row([
-            dbc.Col(dbc.Card(html.H3(children='Tweet Breakdown',
-                                     className="text-center text-light bg-dark"), body=True, color="dark")
-                    , className="mt-4 mb-4")
-        ]),
-    dbc.Row([
-        dbc.Col(third_card, width=6),
-        dbc.Col(fourth_card, width=6),
-            ]
-        ),
-
-    dbc.Row([
-        # dbc.Col(dcc.Graph(id='total_pie_cases_or_deaths'), width=4),
-        # dbc.Col(dcc.Graph(id='total_line_cases_or_deaths'), width=8)
-    ]),
 ])
 ])
 
 
 # Live update sentiment category pie chart
-@app.callback(Output('live-update-sentiment-category-graph', 'figure'),
+@app.callback(Output('live-update-sentiment-category-graph3', 'figure'),
               [
                   Input('interval-component', 'n_intervals'),
                   Input('df-sentiment-by-category', 'data'),
@@ -165,31 +152,6 @@ def live_update_sentiment_category_graph(n, df_json):
                                 'Positive': 'green',
                                 'Negative': 'red'}
         )
-    else:
-        return [""]
-
-    return fig
-
-# Live update country tweet count bar chart
-@app.callback(Output('live-update-sentiment-category-graph2', 'figure'),
-              [
-                  Input('interval-component', 'n_intervals'),
-                  Input('df-sentiment-by-country', 'data'),
-              ])
-def live_update_sentiment_category_graph2(n, df_json):
-
-    if df_json is not None:
-        # Parse df
-        df = pd.read_json(df_json[0], orient='split')
-        fig = px.bar(
-            df,
-            title="Tweets By Country",
-            y="TweetCount",
-            x="Country",
-            text_auto='.2s',
-            log_y=True
-        )
-        fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
     else:
         return [""]
 
