@@ -4,23 +4,11 @@
 # pip install pycountry_convert
 
 import datetime
-from logging import exception
-from msilib.schema import Error
-import traceback
-from turtle import color, width
-
 import dash
 from dash import dcc, html
-import plotly
-import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
-from urllib.request import urlopen
-import json
-import requests
-import numpy as np
 import pandas as pd
 import plotly.express as px
-import random
 from pycountry_convert import country_alpha2_to_country_name, country_name_to_country_alpha3
 
 project_bucket_name = "cloud-project-bucket-ns-22"
@@ -188,20 +176,6 @@ def live_update_sentiment_map(n, df_json):
         color_continuous_scale=px.colors.diverging.RdBu,
         color_continuous_midpoint=0,
     )
-    # fig.update_layout(
-    #     autosize=False,
-    #     margin=dict(l=60, r=60, t=50, b=50, autoexpand=True),
-    #     # margin = dict(
-    #     #         l=0,
-    #     #         r=0,
-    #     #         b=0,
-    #     #         t=0,
-    #     #         pad=4,
-    #     #         autoexpand=True
-    #     #     ),
-    #         width=800,
-    #     #     height=400,
-    # )
     return fig
 
 

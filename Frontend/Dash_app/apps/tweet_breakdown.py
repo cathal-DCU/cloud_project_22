@@ -1,47 +1,17 @@
-import plotly.graph_objects as go
 import pandas as pd
-
-import dash
-from dash import html, dcc, dash_table
-# import dash_core_components as dcc
-# import dash_html_components as html
+from dash import html, dcc
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 import plotly.express as px
 from app import app
 from datetime import datetime
-import codecs
-# https://github.com/plotly/dash-dangerously-set-inner-html
-import dash_dangerously_set_inner_html
-
-"""
-dbc.Row([
-    dash_dangerously_set_inner_html.DangerouslySetInnerHTML(
-        open("assets/world.html", 'r')),
-    ]),
-dbc.Row([
-    dbc.Col(dbc.Card(html.H3(children='Daily sentiment by continent',
-                             className="text-center text-light bg-dark"), body=True, color="dark")
-    , className="mt-4 mb-4")
-]),
-"""
-
-import dash
 import dash_html_components as html
-import base64
-
+i
 # datetime object containing current date and time
 now = datetime.now()
 # dd/mm/YY H:M
 dt_string = now.strftime("%d/%m/%Y %H:%M")
-#image_filename = 'image_one.png' # replace with your own image
-#encoded_image = base64.b64encode(open(image_filename, 'rb').read())
 
-#app.layout = html.Div([
-#    html.Img(src='data:image/png;base64,{}'.format(encoded_image))
-#])
-
-# change to app.layout if running as single page app instead
 first_card = dbc.Card(
     dbc.CardBody(
         [
