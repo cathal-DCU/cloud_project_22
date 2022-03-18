@@ -6,7 +6,7 @@ import plotly.express as px
 from app import app
 from datetime import datetime
 import dash_html_components as html
-i
+
 # datetime object containing current date and time
 now = datetime.now()
 # dd/mm/YY H:M

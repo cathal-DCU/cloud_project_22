@@ -16,7 +16,7 @@ dt_string = now.strftime("%d/%m/%Y %H:%M")
 
 def countries_list(df):
     return df['countriesAndTerritories'].unique()
-available_countries=countries_list(df)
+# available_countries=countries_list(df)
 
 layout = html.Div([
     dbc.Container([
@@ -54,7 +54,7 @@ layout = html.Div([
 
     dcc.Dropdown(
         id='countries',
-        options=[{'label': i, 'value': i} for i in available_countries],
+        # options=[{'label': i, 'value': i} for i in available_countries],
         value=['Sweden', 'Switzerland'],
         multi=True,
         style={'width': '70%', 'margin-left': '5px'}
