@@ -1,4 +1,8 @@
 from dash import html, dcc, dash_table
+from app import app, server
+from dash import html, dcc, dash_table
+from dash.dependencies import Input, Output, State
+import dash_bootstrap_components as dbc
 #import dash_html_components as html
 import dash_bootstrap_components as dbc
 
@@ -13,9 +17,8 @@ first_card = dbc.Card(
         [
             html.H5("Enter your topic of interest", className="card-title"),
             html.P("Then click 'Submit' and start exploring"),
-            dcc.Input(id='input-on-submit', type='text', debounce=True, pattern=u"^[a-z]+$",
-                      style={'display': 'inline-block'}),
-            dbc.Button('Submit', id='submit-val', n_clicks=0, style={'display': 'inline-block'}, color="primary"),
+            dcc.Input(id='input-on-submit', type='text', value="Batman", style={'display': 'inline-block'}),
+            html.Button('Submit', id='submit-val', n_clicks=0, style={'display': 'inline-block'}),
         ]
     )
 )
@@ -64,6 +67,30 @@ layout = html.Div([
     ])
 
 ])
+
+
+# ------------------------------------------------------------------------------
+# Submit topic
+@app.callback(
+    [
+        Output("topic", "data"),
+        Output(component_id="topic_container", component_property="children"),
+    ],
+    Input("submit-val", "n_clicks"),
+    State('input-on-submit', 'value'),
+)
+def submit_topic(n_clicks, topic):
+    print(topic)
+
+    # Kick off topic in cloud - TODO
+    clean_topic = topic
+    if topic is not None:
+        clean_topic = topic.strip()
+        if len(clean_topic) == 0:
+            clean_topic = None
+
+    container = ["The topic chosen by user was: '{}'".format(topic)]
+    return clean_topic, container
 
 # needed only if running this as a single page app
 # if __name__ == '__main__':

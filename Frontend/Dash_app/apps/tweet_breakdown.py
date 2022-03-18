@@ -7,7 +7,7 @@ from dash import html, dcc, dash_table
 # import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
-
+import plotly.express as px
 from app import app
 from datetime import datetime
 import codecs
@@ -45,7 +45,7 @@ dt_string = now.strftime("%d/%m/%Y %H:%M")
 first_card = dbc.Card(
     dbc.CardBody(
         [
-            html.H5("Top 25 most common words", className="card-title"),
+            html.H5("Sentiment Breakdown", className="card-title"),
             dbc.Row([
                 dbc.Col(html.Img(src="/assets/image_three.png")),
                 # dbc.Col(dbc.NavbarBrand("Sentiment Explorer", className="ml-2")),
@@ -144,65 +144,75 @@ layout = html.Div([
 ])
 ])
 
-# page callbacks
-# display pie charts and line charts to show number of cases or deaths
-# @app.callback()
-"""
-@app.callback([Output('pie_cases_or_deaths', 'figure'),
-               Output('line_cases_or_deaths', 'figure'),
-               Output('total_pie_cases_or_deaths', 'figure'),
-               Output('total_line_cases_or_deaths', 'figure')],
-              [Input('cases_or_deaths', 'value')])
-"""
 
-def update_graph(choice):
+# Live update sentiment category pie chart
+@app.callback(Output('live-update-sentiment-category-graph', 'figure'),
+              [
+                  Input('interval-component', 'n_intervals'),
+                  Input('df-sentiment-by-category', 'data'),
+              ])
+def live_update_sentiment_category_graph(n, df_json):
+    if df_json is not None:
+        # Parse df
+        df = pd.read_json(df_json[0], orient='split')
+        fig = px.pie(
+            df,
+            title="Sentiment By Category",
+            values="TweetCount",
+            names="Sentiment",
+            color="Sentiment",
+            color_discrete_map={'Neutral': 'orange',
+                                'Positive': 'green',
+                                'Negative': 'red'}
+        )
+    else:
+        return [""]
 
-    fig = go.Figure(data=[
-        go.Pie(labels=df3['continentExp'], values=df3[choice])
-        ])
+    return fig
 
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',
-                      plot_bgcolor='rgba(0,0,0,0)',
-                      template = "seaborn",
-                      margin=dict(t=0))
+# Live update country tweet count bar chart
+@app.callback(Output('live-update-sentiment-category-graph2', 'figure'),
+              [
+                  Input('interval-component', 'n_intervals'),
+                  Input('df-sentiment-by-country', 'data'),
+              ])
+def live_update_sentiment_category_graph2(n, df_json):
 
-    dff = df2.copy()
-    dff = pd.pivot_table(dff, values=choice, index=['date'], columns='continentExp')
+    if df_json is not None:
+        # Parse df
+        df = pd.read_json(df_json[0], orient='split')
+        fig = px.bar(
+            df,
+            title="Tweets By Country",
+            y="TweetCount",
+            x="Country",
+            text_auto='.2s',
+            log_y=True
+        )
+        fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
+    else:
+        return [""]
 
-    fig2 = go.Figure()
-    for col in dff.columns:
-        fig2.add_trace(go.Scatter(x=dff.index, y=dff[col].values,
-                                 name=col,
-                                 mode='markers+lines'))
+    return fig
 
-    fig2.update_layout(yaxis_title='Number Per 1 Million',
-                       paper_bgcolor='rgba(0,0,0,0)',
-                       plot_bgcolor='rgba(0,0,0,0)',
-                       template = "seaborn",
-                       margin=dict(t=0))
 
-    fig3 = go.Figure(data=[
-        go.Pie(labels=df4.index, values=df4[choice])
-        ])
+# Sample metrics with number of tweets and current date from last update
+@app.callback(Output('live-update-text', 'children'),
+              [
+                  Input('interval-component', 'n_intervals'),
+                  Input('df-sentiment-by-category', 'data'),
+              ])
+def update_metrics(n, df_json):
+    tweet_count = 0
+    if df_json is not None:
+        # Parse df
+        df = pd.read_json(df_json[0], orient='split')
+        # Update tweet count
+        tweet_count = df['TweetCount'].sum()
+    date = datetime.datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
+    style = {'padding': '5px', 'fontSize': '16px'}
+    return [
+        html.Span('Last Update: {}'.format(date), style=style),
+        html.Span('Tweet Count: {:,}'.format(tweet_count), style=style),
+    ]
 
-    fig3.update_layout(paper_bgcolor='rgba(0,0,0,0)',
-                       plot_bgcolor='rgba(0,0,0,0)',
-                       template = "seaborn",
-                       margin=dict(t=0))
-
-    dff2 = df5.copy()
-    dff2 = pd.pivot_table(dff2, values=choice, index=['date'], columns='continentExp')
-
-    fig4 = go.Figure()
-    for col in dff2.columns:
-        fig4.add_trace(go.Scatter(x=dff2.index, y=dff2[col].values,
-                                 name=col,
-                                 mode='markers+lines'))
-
-    fig4.update_layout(yaxis_title='Number Per 1 Million',
-                       paper_bgcolor='rgba(0,0,0,0)',
-                       plot_bgcolor='rgba(0,0,0,0)',
-                       template = "seaborn",
-                       margin=dict(t=0))
-
-    return fig, fig2, fig3, fig4
