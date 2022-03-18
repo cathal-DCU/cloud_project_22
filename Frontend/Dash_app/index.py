@@ -17,8 +17,8 @@ dropdown = dbc.DropdownMenu(
     children=[
         dbc.DropdownMenuItem("Home", href="/home"),
         dbc.DropdownMenuItem("Global Sentiment", href="/global_sentiment"),
-        dbc.DropdownMenuItem("US sentiment", href="/sentiment_usa"),
-        dbc.DropdownMenuItem("Other countries", href="/sentiment_other"),
+        #dbc.DropdownMenuItem("US sentiment", href="/sentiment_usa"),
+        #dbc.DropdownMenuItem("Other countries", href="/sentiment_other"),
         dbc.DropdownMenuItem("Overall Tweet Breakdown", href="/tweet_breakdown"),
     ],
     nav = True,

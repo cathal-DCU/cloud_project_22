@@ -98,11 +98,11 @@ layout = html.Div([
             id='sentiment_of_interest',
             options=[
                 {'label': 'Total Sentiment', 'value': 'total_sentiment'},
-                {'label': 'Positive Sentiment', 'value': 'positive_sentiment'},
-                {'label': 'Negative Sentiment', 'value': 'negative_sentiment'},
-                {'label': 'Neutral Sentiment', 'value': 'neutral_sentiment'},
+                #{'label': 'Positive Sentiment', 'value': 'positive_sentiment'},
+                #{'label': 'Negative Sentiment', 'value': 'negative_sentiment'},
+                #{'label': 'Neutral Sentiment', 'value': 'neutral_sentiment'},
             ],
-            value='cases per 1 mil',
+            value='total_sentiment',
             # multi=True,
             style={'width': '50%'}
         ),
@@ -123,27 +123,25 @@ layout = html.Div([
         ),
 
         dbc.Row([
-            dbc.Col(dbc.Card(html.H3(children='Daily Sentiment by Continent',
+            dbc.Col(dbc.Card(html.H3(children='Cumulative sentiment by country',
                                      className="text-center text-light bg-dark"), body=True, color="dark")
-                    , className="mt-4 mb-4")
+                    , className="mb-4")
         ]),
         dbc.Row([
-            dbc.Col(html.H5(children='Latest update: ' + dt_string, className="text-center"),
-                    width=4, className="mt-4"),
-            dbc.Col(html.H5(children='Line Graph Visual: ' + dt_string, className="text-center"), width=8,
-                    className="mt-4"),
-        ]),
-
-        dbc.Row([
-            dbc.Col(dcc.Graph(id='pie_cases_or_deaths'), width=4),
-            dbc.Col(dcc.Graph(id='line_cases_or_deaths'), width=8)
-        ]),
-
+            html.H4('Live Tweet Sentiment Map'),
+            html.Div(children=[
+                dcc.Graph(id="live-update-sentiment-map1"),
+            ], style={"border": "2px black solid"}),
+            html.Br(),
+        ],
+            align="center",
+        ),
         dbc.Row([
             dbc.Col(dbc.Card(html.H3(children='Cumulative sentiment by continent',
                                      className="text-center text-light bg-dark"), body=True, color="dark")
                     , className="mb-4")
         ]),
+
         dbc.Row([
             dbc.Col(html.H5(children='Latest update: ' + dt_string, className="text-center"),
                     width=4, className="mt-4"),
@@ -152,14 +150,14 @@ layout = html.Div([
         ]),
 
         dbc.Row([
-            dbc.Col(dcc.Graph(id='total_pie_cases_or_deaths'), width=4),
-            dbc.Col(dcc.Graph(id='total_line_cases_or_deaths'), width=8)
-        ]),
 
+            dbc.Col(dcc.Graph(id='live-update-sentiment-map3'), width=4),
+            dbc.Col(dcc.Graph(id='live-update-sentiment-map4'), width=8)
+        ]),
         # Update interval for live graphs
         dcc.Interval(
             id='interval-component',
-            interval=10*1000, # in milliseconds
+            interval=10 * 1000,  # in milliseconds
             n_intervals=0
         ),
 
@@ -272,19 +270,31 @@ def live_update_sentiment_map(n, df_json):
         color_continuous_midpoint=0,
     )
 
-    # fig.update_layout(
-    #     autosize=False,
-    #     margin=dict(l=60, r=60, t=50, b=50, autoexpand=True),
-    #     # margin = dict(
-    #     #         l=0,
-    #     #         r=0,
-    #     #         b=0,
-    #     #         t=0,
-    #     #         pad=4,
-    #     #         autoexpand=True
-    #     #     ),
-    #         width=800,
-    #     #     height=400,
-    # )
+    return fig
+
+# Live update country tweet count bar chart
+@app.callback(Output('live-update-sentiment-map1', 'figure'),
+              [
+                  Input('interval-component', 'n_intervals'),
+                  Input('df-sentiment-by-country', 'data'),
+              ])
+def live_update_sentiment_category_graph2(n, df_json):
+
+    if df_json is not None:
+        # Parse df
+        df = pd.read_json(df_json[0], orient='split')
+        fig = px.bar(
+            df,
+            title="Tweets By Country",
+            y="TweetCount",
+            x="Country",
+            color="Country",
+            text_auto='.2s',
+            log_y=True
+        )
+        fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
+    else:
+        return [""]
+
     return fig
 
